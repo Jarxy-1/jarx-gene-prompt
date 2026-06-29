@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title id="pageTitle">Prompt Generator</title>
+<style>
+  :root{
+    --bg:#15171c;
+    --panel:#1d2027;
+    --panel-2:#23262e;
+    --line:#2c2f38;
+    --text:#e8e6df;
+    --text-dim:#8b95a6;
+    --accent:#ff8a3d;
+    --accent-dim:#c96a2a;
+    --ok:#4fd1c5;
+    --danger:#ef6464;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3{
+    font-family:'Space Grotesk','Inter',sans-serif;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:20px 18px 60px;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:6px 0 22px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+  }
+  .brand-logo{
+    width:42px;height:42px;
+    border-radius:10px;
+    object-fit:cover;
+    flex-shrink:0;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+  }
+  .brand-logo.placeholder{
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    color:var(--accent);
+    font-size:18px;
+  }
+  .brand-name{
+    font-size:19px;
+    font-weight:600;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .admin-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    border-radius:999px;
+    padding:8px 14px;
+    font-size:13px;
+    cursor:pointer;
+    font-family:inherit;
+    flex-shrink:0;
+    transition:border-color .15s, color .15s;
+  }
+  .admin-btn:hover{border-color:var(--accent-dim); color:var(--text);}
+
+  .rules{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent-dim);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.55;
+    margin-bottom:18px;
+    white-space:pre-wrap;
+  }
+  .rules strong{color:var(--text); font-weight:600;}
+
+  .dropzone{
+    background:var(--panel);
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    position:relative;
+  }
+  .dropzone.drag{
+    border-color:var(--accent);
+    background:var(--panel-2);
+  }
+  .dropzone input{display:none;}
+  .dz-icon{
+    font-size:30px;
+    margin-bottom:10px;
+    opacity:.85;
+  }
+  .dz-title{font-size:15px; font-weight:600; margin-bottom:4px;}
+  .dz-sub{font-size:12.5px; color:var(--text-dim);}
+
+  .preview-wrap{
+    margin-top:16px;
+    border-radius:var(--radius);
+    overflow:hidden;
+    border:1px solid var(--line);
+    position:relative;
+    display:none;
+  }
+  .preview-wrap img{
+    width:100%;
+    max-height:320px;
+    object-fit:contain;
+    display:block;
+    background:#000;
+  }
+  .preview-clear{
+    position:absolute; top:8px; right:8px;
+    background:rgba(0,0,0,.55);
+    border:none;
+    color:#fff;
+    width:28px;height:28px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+  }
+
+  .status{
+    display:none;
+    align-items:center;
+    gap:10px;
+    margin-top:16px;
+    padding:13px 16px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    font-size:13.5px;
+    color:var(--text-dim);
+  }
+  .spinner{
+    width:16px;height:16px;
+    border-radius:50%;
+    border:2px solid var(--line);
+    border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .status.error{color:var(--danger); border-color:rgba(239,100,100,.35);}
+
+  .result{
+    display:none;
+    margin-top:18px;
+  }
+  .result-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--accent);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .result-box{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    border-radius:var(--radius);
+    padding:16px 16px 14px;
+  }
+  textarea#resultText{
+    width:100%;
+    background:transparent;
+    border:none;
+    color:var(--text);
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:13px;
+    line-height:1.6;
+    resize:vertical;
+    min-height:220px;
+    outline:none;
+  }
+  .result-foot{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+    gap:10px;
+  }
+  .watermark-tag{
+    font-size:11.5px;
+    color:var(--text-dim);
+    font-style:italic;
+  }
+  .copy-btn{
+    background:var(--accent);
+    color:#1a1100;
+    border:none;
+    font-weight:600;
+    font-size:13px;
+    padding:9px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    font-family:inherit;
+    flex-shrink:0;
+    transition:transform .1s, background .15s;
+  }
+  .copy-btn:active{transform:scale(.96);}
+  .copy-btn.copied{background:var(--ok); color:#04201d;}
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+    backdrop-filter:blur(2px);
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px 18px 0 0;
+    width:100%;
+    max-width:640px;
+    max-height:88vh;
+    overflow-y:auto;
+    padding:20px 20px 28px;
+    animation:slideup .2s ease-out;
+  }
+  @media (min-width:560px){
+    .overlay{align-items:center;}
+    .modal{border-radius:18px; max-height:85vh;}
+  }
+  @keyframes slideup{from{transform:translateY(24px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:18px;
+  }
+  .modal-close{
+    background:transparent; border:none; color:var(--text-dim);
+    font-size:22px; cursor:pointer; line-height:1; padding:4px;
+  }
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    font-weight:500;
+  }
+  .field input[type=text], .field input[type=password], .field textarea{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:10px;
+    padding:11px 12px;
+    font-size:14px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus, .field textarea:focus{border-color:var(--accent-dim);}
+  .field textarea{resize:vertical; min-height:90px; line-height:1.5;}
+  .field-hint{font-size:11.5px; color:var(--text-dim); margin-top:5px;}
+  .logo-pick{
+    display:flex; align-items:center; gap:12px;
+  }
+  .logo-pick img, .logo-pick .ph{
+    width:52px;height:52px;border-radius:10px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+  }
+  .file-btn{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:9px 14px;
+    border-radius:10px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .primary-btn{
+    width:100%;
+    background:var(--accent);
+    color:#1a1100;
+    border:none;
+    font-weight:600;
+    font-size:14.5px;
+    padding:13px;
+    border-radius:12px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .primary-btn:disabled{opacity:.6; cursor:default;}
+  .ghost-btn{
+    width:100%;
+    background:transparent;
+    color:var(--text-dim);
+    border:1px solid var(--line);
+    font-size:13.5px;
+    padding:11px;
+    border-radius:12px;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  .divider{
+    border-top:1px solid var(--line);
+    margin:22px 0 18px;
+  }
+  .save-msg{
+    text-align:center;
+    color:var(--ok);
+    font-size:13px;
+    margin-top:10px;
+    display:none;
+  }
+  .login-err, .admin-err{
+    color:var(--danger);
+    font-size:13px;
+    margin-top:8px;
+    display:none;
+  }
+  .section-title{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--text-dim);
+    margin:20px 0 10px;
+    font-weight:600;
+  }
+  .section-title:first-of-type{margin-top:0;}
+  footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:11.5px;
+    margin-top:30px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img id="logoImg" class="brand-logo" style="display:none;" alt="logo">
+      <div id="logoPh" class="brand-logo placeholder">P</div>
+      <div id="siteNameLabel" class="brand-name">Prompt Generator</div>
+    </div>
+    <button class="admin-btn" id="openAdminBtn">Admin</button>
+  </header>
+
+  <div class="rules" id="rulesBox"><strong>Cara pakai:</strong> upload foto, prompt otomatis dibuat. Tinggal salin hasilnya.</div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="dz-icon">📷</div>
+    <div class="dz-title">Ketuk untuk pilih foto</div>
+    <div class="dz-sub">atau tarik & lepas gambar di sini</div>
+  </div>
+
+  <div class="preview-wrap" id="previewWrap">
+    <img id="previewImg" alt="preview">
+    <button class="preview-clear" id="clearPreview">✕</button>
+  </div>
+
+  <div class="status" id="statusBox">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText">Menganalisis foto...</span>
+  </div>
+
+  <div class="result" id="resultBox">
+    <div class="result-label">Prompt</div>
+    <div class="result-box">
+      <textarea id="resultText" readonly rows="10"></textarea>
+      <div class="result-foot">
+        <span class="watermark-tag" id="watermarkTag"></span>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <footer id="footerNote"></footer>
+</div>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Masuk Admin</h3>
+      <button class="modal-close" id="closeLoginBtn">✕</button>
+    </div>
+    <div class="field">
+      <label>Password admin</label>
+      <input type="password" id="loginPassInput" placeholder="Masukkan password">
+    </div>
+    <div class="login-err" id="loginErr">Password salah, coba lagi.</div>
+    <button class="primary-btn" id="loginSubmitBtn">Masuk</button>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL MODAL ===== -->
+<div class="overlay" id="adminOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Menu Admin</h3>
+      <button class="modal-close" id="closeAdminBtn">✕</button>
+    </div>
+
+    <div class="section-title">Tampilan Web</div>
+    <div class="field">
+      <label>Nama web</label>
+      <input type="text" id="adminSiteName">
+    </div>
+    <div class="field">
+      <label>Rules / aturan yang tampil di dashboard</label>
+      <textarea id="adminRules"></textarea>
+      <div class="field-hint">Teks ini tampil di kotak atas, di atas tombol upload foto.</div>
+    </div>
+    <div class="field">
+      <label>Nama watermark</label>
+      <input type="text" id="adminWatermark">
+      <div class="field-hint">Ditambahkan otomatis di akhir setiap prompt yang dibuat.</div>
+    </div>
+    <div class="field">
+      <label>Logo web</label>
+      <div class="logo-pick">
+        <img id="adminLogoPreview" style="display:none;">
+        <div id="adminLogoPh" class="ph"></div>
+        <input type="file" id="adminLogoInput" accept="image/*" style="display:none;">
+        <button class="file-btn" id="adminLogoPickBtn" type="button">Pilih foto logo</button>
+      </div>
+      <div class="field-hint">Logo diupload sebagai gambar, bukan link. Disarankan ukuran kecil (&lt;500KB).</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Keamanan</div>
+    <div class="field">
+      <label>Password baru</label>
+      <input type="password" id="adminNewPass" placeholder="Kosongkan jika tidak ingin ganti">
+    </div>
+    <div class="field">
+      <label>Ulangi password baru</label>
+      <input type="password" id="adminNewPass2" placeholder="Ulangi password baru">
+    </div>
+    <div class="field-hint" style="margin-top:-8px; margin-bottom:14px;">API key Gemini diatur lewat Environment Variable di Vercel (GEMINI_API_KEY), bukan di sini — supaya tidak pernah terlihat di browser pengunjung.</div>
+
+    <div class="admin-err" id="adminErr"></div>
+    <button class="primary-btn" id="saveAdminBtn">Simpan perubahan</button>
+    <div class="save-msg" id="saveMsg">Tersimpan ✓</div>
+    <button class="ghost-btn" id="logoutBtn">Keluar dari admin</button>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  let settings = {
+    siteName: 'Prompt Generator',
+    rules: '',
+    watermark: '',
+    logo: ''
+  };
+  let adminPasswordCache = ''; // kept only in memory for this session, never persisted client-side
+  let pendingLogoBase64 = null;
+
+  const el = id => document.getElementById(id);
+  const pageTitle = el('pageTitle');
+  const siteNameLabel = el('siteNameLabel');
+  const logoImg = el('logoImg');
+  const logoPh = el('logoPh');
+  const rulesBox = el('rulesBox');
+  const footerNote = el('footerNote');
+
+  const dropzone = el('dropzone');
+  const fileInput = el('fileInput');
+  const previewWrap = el('previewWrap');
+  const previewImg = el('previewImg');
+  const clearPreview = el('clearPreview');
+
+  const statusBox = el('statusBox');
+  const statusText = el('statusText');
+  const resultBox = el('resultBox');
+  const resultText = el('resultText');
+  const watermarkTag = el('watermarkTag');
+  const copyBtn = el('copyBtn');
+
+  const openAdminBtn = el('openAdminBtn');
+  const loginOverlay = el('loginOverlay');
+  const closeLoginBtn = el('closeLoginBtn');
+  const loginPassInput = el('loginPassInput');
+  const loginErr = el('loginErr');
+  const loginSubmitBtn = el('loginSubmitBtn');
+
+  const adminOverlay = el('adminOverlay');
+  const closeAdminBtn = el('closeAdminBtn');
+  const adminSiteName = el('adminSiteName');
+  const adminRules = el('adminRules');
+  const adminWatermark = el('adminWatermark');
+  const adminLogoPreview = el('adminLogoPreview');
+  const adminLogoPh = el('adminLogoPh');
+  const adminLogoInput = el('adminLogoInput');
+  const adminLogoPickBtn = el('adminLogoPickBtn');
+  const adminNewPass = el('adminNewPass');
+  const adminNewPass2 = el('adminNewPass2');
+  const adminErr = el('adminErr');
+  const saveAdminBtn = el('saveAdminBtn');
+  const saveMsg = el('saveMsg');
+  const logoutBtn = el('logoutBtn');
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderDashboard(){
+    pageTitle.textContent = settings.siteName || 'Prompt Generator';
+    siteNameLabel.textContent = settings.siteName || 'Prompt Generator';
+    rulesBox.innerHTML = '<strong>Cara pakai:</strong> ' + escapeHtml(settings.rules || 'Upload foto, prompt dibuat otomatis.');
+    footerNote.textContent = settings.watermark || '';
+
+    if(settings.logo){
+      logoImg.src = settings.logo;
+      logoImg.style.display = 'block';
+      logoPh.style.display = 'none';
+    }else{
+      logoImg.style.display = 'none';
+      logoPh.style.display = 'flex';
+      logoPh.textContent = (settings.siteName || 'P').trim().charAt(0).toUpperCase();
+    }
+  }
+
+  async function loadSettings(){
+    try{
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      settings = { ...settings, ...data };
+    }catch(e){
+      // fall back to defaults already in `settings`
+    }
+    renderDashboard();
+  }
+  loadSettings();
+
+  // ---- Upload flow ----
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if(e.dataTransfer.files && e.dataTransfer.files[0]){
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+  fileInput.addEventListener('change', e => {
+    if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  clearPreview.addEventListener('click', e => {
+    e.stopPropagation();
+    resetUpload();
+  });
+
+  function resetUpload(){
+    previewWrap.style.display = 'none';
+    previewImg.src = '';
+    resultBox.style.display = 'none';
+    statusBox.style.display = 'none';
+    statusBox.classList.remove('error');
+    fileInput.value = '';
+  }
+
+  function handleFile(file){
+    if(!file.type.startsWith('image/')){
+      showStatus('error', 'File harus berupa gambar.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const dataUrl = ev.target.result;
+      previewImg.src = dataUrl;
+      previewWrap.style.display = 'block';
+      resultBox.style.display = 'none';
+      const base64 = dataUrl.split(',')[1];
+      generatePrompt(base64, file.type);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showStatus(type, msg){
+    statusBox.style.display = 'flex';
+    statusBox.classList.toggle('error', type === 'error');
+    el('spinner').style.display = type === 'error' ? 'none' : 'block';
+    statusText.textContent = msg;
+  }
+  function hideStatus(){
+    statusBox.style.display = 'none';
+  }
+
+  async function generatePrompt(base64, mimeType){
+    showStatus('loading', 'Menganalisis foto...');
+    resultBox.style.display = 'none';
+
+    try{
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mimeType })
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        showStatus('error', data.error || 'Gagal membuat prompt.');
+        return;
+      }
+
+      hideStatus();
+      const finalText = settings.watermark ? (data.prompt + '\n\n— ' + settings.watermark) : data.prompt;
+      resultText.value = finalText;
+      watermarkTag.textContent = settings.watermark || '';
+      resultBox.style.display = 'block';
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+
+    }catch(err){
+      showStatus('error', 'Terjadi kesalahan koneksi: ' + err.message);
+    }
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(resultText.value);
+    }catch(e){
+      resultText.select();
+      document.execCommand('copy');
+    }
+    copyBtn.textContent = 'Tersalin ✓';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+    }, 1800);
+  });
+
+  // ---- Admin: login ----
+  function openLogin(){
+    loginPassInput.value = '';
+    loginErr.style.display = 'none';
+    loginOverlay.classList.add('show');
+    setTimeout(() => loginPassInput.focus(), 50);
+  }
+  function closeLogin(){ loginOverlay.classList.remove('show'); }
+
+  openAdminBtn.addEventListener('click', openLogin);
+  closeLoginBtn.addEventListener('click', closeLogin);
+  loginOverlay.addEventListener('click', e => { if(e.target === loginOverlay) closeLogin(); });
+
+  loginSubmitBtn.addEventListener('click', attemptLogin);
+  loginPassInput.addEventListener('keydown', e => { if(e.key === 'Enter') attemptLogin(); });
+
+  async function attemptLogin(){
+    const pass = loginPassInput.value;
+    loginSubmitBtn.disabled = true;
+    try{
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass })
+      });
+      const data = await res.json();
+      if(res.ok && data.ok){
+        adminPasswordCache = pass;
+        loginErr.style.display = 'none';
+        closeLogin();
+        openAdminPanel();
+      }else{
+        loginErr.textContent = data.error || 'Password salah, coba lagi.';
+        loginErr.style.display = 'block';
+      }
+    }catch(e){
+      loginErr.textContent = 'Gagal menghubungi server.';
+      loginErr.style.display = 'block';
+    }finally{
+      loginSubmitBtn.disabled = false;
+    }
+  }
+
+  // ---- Admin: panel ----
+  function openAdminPanel(){
+    adminSiteName.value = settings.siteName || '';
+    adminRules.value = settings.rules || '';
+    adminWatermark.value = settings.watermark || '';
+    adminNewPass.value = '';
+    adminNewPass2.value = '';
+    pendingLogoBase64 = null;
+    saveMsg.style.display = 'none';
+    adminErr.style.display = 'none';
+
+    if(settings.logo){
+      adminLogoPreview.src = settings.logo;
+      adminLogoPreview.style.display = 'block';
+      adminLogoPh.style.display = 'none';
+    }else{
+      adminLogoPreview.style.display = 'none';
+      adminLogoPh.style.display = 'block';
+    }
+
+    adminOverlay.classList.add('show');
+  }
+  function closeAdminPanel(){ adminOverlay.classList.remove('show'); }
+
+  closeAdminBtn.addEventListener('click', closeAdminPanel);
+  adminOverlay.addEventListener('click', e => { if(e.target === adminOverlay) closeAdminPanel(); });
+
+  adminLogoPickBtn.addEventListener('click', () => adminLogoInput.click());
+  adminLogoInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingLogoBase64 = ev.target.result;
+      adminLogoPreview.src = pendingLogoBase64;
+      adminLogoPreview.style.display = 'block';
+      adminLogoPh.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  saveAdminBtn.addEventListener('click', async () => {
+    adminErr.style.display = 'none';
+    const newPass = adminNewPass.value;
+    const newPass2 = adminNewPass2.value;
+
+    if(newPass || newPass2){
+      if(newPass.length < 4){
+        adminErr.textContent = 'Password baru minimal 4 karakter.';
+        adminErr.style.display = 'block';
+        return;
+      }
+      if(newPass !== newPass2){
+        adminErr.textContent = 'Konfirmasi password baru tidak sama.';
+        adminErr.style.display = 'block';
+        return;
+      }
+    }
+
+    const payload = {
+      currentPassword: adminPasswordCache,
+      siteName: adminSiteName.value.trim(),
+      rules: adminRules.value.trim(),
+      watermark: adminWatermark.value.trim()
+    };
+    if(pendingLogoBase64) payload.logo = pendingLogoBase64;
+    if(newPass) payload.newPassword = newPass;
+
+    saveAdminBtn.disabled = true;
+    try{
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        adminErr.textContent = data.error || 'Gagal menyimpan.';
+        adminErr.style.display = 'block';
+        return;
+      }
+
+      settings = { ...settings, ...data };
+      if(newPass) adminPasswordCache = newPass; // keep session valid after password change
+      renderDashboard();
+
+      saveMsg.style.display = 'block';
+      adminNewPass.value = '';
+      adminNewPass2.value = '';
+      setTimeout(() => { saveMsg.style.display = 'none'; }, 2200);
+    }catch(e){
+      adminErr.textContent = 'Gagal menghubungi server.';
+      adminErr.style.display = 'block';
+    }finally{
+      saveAdminBtn.disabled = false;
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    adminPasswordCache = '';
+    closeAdminPanel();
+  });
+
+})();
+</script>
+</body>
+</html>
